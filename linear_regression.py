@@ -1,31 +1,36 @@
-import math
 import pandas as pd
-import quandl
+import quandl, math, datetime
 import numpy as np
 from api_data import api_key
 from sklearn import preprocessing, model_selection, svm
 from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+from matplotlib import style
 
-quandl.ApiConfig.api_key = api_key
-df = quandl.get('WIKI/GOOGL')
+style.use('ggplot')
 
-df = df[['Adj. Open', 'Adj. High', 'Adj. Low', 'Adj. Close', 'Adj. Volume',]]
-df['HL_PCT'] = (df['Adj. High'] - df['Adj. Low']) / df['Adj. Low'] * 100.0
-df['PCT_CHANGE'] = (df['Adj. Close'] - df['Adj. Open']) / df['Adj. Open'] * 100.0
+df = quandl.get("EOD/AAPL", authtoken=api_key)
+print(df.head())
 
-df = df[['Adj. Close', 'HL_PCT',  'PCT_CHANGE', 'Adj. Volume']]
+df = df[['Adj_Open', 'Adj_High', 'Adj_Low', 'Adj_Close', 'Adj_Volume',]]
+df['HL_PCT'] = (df['Adj_High'] - df['Adj_Low']) / df['Adj_Low'] * 100.0
+df['PCT_CHANGE'] = (df['Adj_Close'] - df['Adj_Open']) / df['Adj_Open'] * 100.0
 
-forecast_col = 'Adj. Close'
+df = df[['Adj_Close', 'HL_PCT',  'PCT_CHANGE', 'Adj_Volume']]
+
+forecast_col = 'Adj_Close'
 df.fillna(-99999, inplace=True)
 
-forecast_out = int(math.ceil(0.01*len(df)))
-df['lable'] = df[forecast_col].shift(-forecast_out)
-df.dropna(inplace=True)
+forecast_out = int(math.ceil(0.1*len(df)))
+df['label'] = df[forecast_col].shift(-forecast_out)
 
-X = np.array(df.drop(['lable'], 1))
-y = np.array(df['lable'])
+X = np.array(df.drop(['label'],1))
 X = preprocessing.scale(X)
-y = np.array(df['lable'])
+X_lately = X[-forecast_out:]
+X = X[:-forecast_out:]
+
+df.dropna(inplace=True)
+y = np.array(df['label'])
 
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
 
@@ -39,6 +44,26 @@ elif algorithm == 'linear':
 clf.fit(X_train, y_train)
 accuracy = clf.score(X_test, y_test)
 
-print(accuracy)
+forecast_set = clf.predict(X_lately)
+    
 
-print(df.head())
+print(forecast_set, accuracy, forecast_out)
+
+df['Forecast'] = np.nan
+
+last_date = df.iloc[-1].name
+last_unix = last_date.timestamp()
+one_day = 86400
+next_unix = last_unix + one_day
+
+for i in forecast_set:
+    next_date = datetime.datetime.fromtimestamp(next_unix)
+    next_unix += one_day
+    df.loc[next_date] = [np.nan for _ in range(len(df.columns) - 1)] + [i]
+
+df['Adj_Close'].plot()
+df['Forecast'].plot()
+plt.legend(loc=4)
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.show()
