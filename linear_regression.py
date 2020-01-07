@@ -6,6 +6,7 @@ from sklearn import preprocessing, model_selection, svm
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from matplotlib import style
+import pickle
 
 style.use('ggplot')
 
@@ -18,7 +19,7 @@ df = df[['Adj_Close', 'HL_PCT',  'PCT_CHANGE', 'Adj_Volume']]
 forecast_col = 'Adj_Close'
 df.fillna(-99999, inplace=True)
 
-forecast_out = int(math.ceil(0.1*len(df)))
+forecast_out = int(math.ceil(0.01*len(df)))
 df['label'] = df[forecast_col].shift(-forecast_out)
 
 X = np.array(df.drop(['label'],1))
@@ -34,11 +35,20 @@ X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_s
 algorithm = 'linear'
 if algorithm == 'svm':
     clf = svm.SVR()
+    clf.fit(X_train, y_train)
+    accuracy = clf.score(X_test, y_test)
+    with open('svm.pickle', 'wb') as f:
+        pickle.dump(clf, f)
+    pickle_in = open('svm.pickle', 'rb')
+    clf = pickle.load(pickle_in)
 elif algorithm == 'linear':
     clf = LinearRegression(n_jobs=-1)
-
-clf.fit(X_train, y_train)
-accuracy = clf.score(X_test, y_test)
+    clf.fit(X_train, y_train)
+    accuracy = clf.score(X_test, y_test)
+    with open('linearReg.pickle', 'wb') as f:
+        pickle.dump(clf, f)
+    pickle_in = open('linearReg.pickle', 'rb')
+    clf = pickle.load(pickle_in)
 
 forecast_set = clf.predict(X_lately)
 
