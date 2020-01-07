@@ -29,12 +29,12 @@ y = np.array(df['lable'])
 
 X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.2)
 
-algorithm = 'svm'
+algorithm = 'linear'
 
 if algorithm == 'svm':
     clf = svm.SVR()
 elif algorithm == 'linear':
-    clf = LinearRegression()
+    clf = LinearRegression(n_jobs=-1)
 
 clf.fit(X_train, y_train)
 accuracy = clf.score(X_test, y_test)
