@@ -5,3 +5,4 @@ linearReg.pickle
 svm.pickle
 Practice_Data
 KNeighborsClassifier.pickle
+__pycache__
