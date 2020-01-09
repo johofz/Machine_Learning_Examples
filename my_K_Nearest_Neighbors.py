@@ -1,7 +1,5 @@
 import numpy as np
-import math
-import matplotlib.pyplot as plt
-from matplotlib import style
+import math, random
 from collections import Counter
 import warnings
 
@@ -24,13 +22,29 @@ def myKNearestNeighbor(data, predict, k=3):
 
     return vote_result
 
+def convert_data(df, test_size=0.2):
+    full_data = df.astype(np.float64).values.tolist()
+    random.shuffle(full_data)
+
+    train_set = {2:[], 4:[]}
+    test_set = {2:[], 4:[]}
+    train_data = full_data[:-int(test_size * len(full_data))]
+    test_data = full_data[-int(test_size * len(full_data)):]
+
+    [train_set[i[-1]].append(i[:-1]) for i in train_data]
+    [test_set[i[-1]].append(i[:-1]) for i in test_data]
+
+    return train_set, test_set
+
 
 if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    from matplotlib import style
     style.use('fivethirtyeight')
-    
-    data_set = {'k':[[1, 2], [2, 3], [4, 5]], 'r': [[7, 5], [5, 8], [6, 6]]}
-    new_data_pt = [5, 5]
 
+    data_set = {'k':[[1,2], [2,3], [2,4]],
+                'r':[[6,8], [5,7], [6,9]]}
+    new_data_pt = [4,4]
     res = myKNearestNeighbor(data_set, new_data_pt, k=3)
     print(res)
     [[plt.scatter(j[0], j[1], color=i) for j in data_set[i]] for i in data_set]
